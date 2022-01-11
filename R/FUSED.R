@@ -546,6 +546,7 @@ calcHomology <- function(DT,
             # Score must be positive, and the template must include
             # the breakpoint and be less than 20 nt in length.
             if (homo$hScore > 0 & homo$hLength <= 20 & homo$gapCount > 0 &
+                (homo$gapCount <= (0.2*homo$hLength)) &
                 (homo$pEnd == 10 | homo$sStart == 1)) {
                 homo[, criteria := "pass"]
             } else {
