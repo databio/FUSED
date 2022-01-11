@@ -23,7 +23,7 @@ For break-induced replication, FUSED looks for homology between 70-100nt in leng
 
 ### MMBIR
 
-For microhomology-mediated break-induced replication, FUSED looks for homology between 1-20nt in length in a window 20nt upstream and downstream of the breakpoint. It requires the homology to be anchored *at* the breakpoint, and expects a gapped alignment of at least a single nt.
+For microhomology-mediated break-induced replication, FUSED looks for homology between 1-20nt in length in a window 20nt upstream and downstream of the breakpoint. It requires the homology to be anchored *at* the breakpoint, expects a gapped alignment of at least a single nt but with at least 80% overall homology.
 
 ## Input
 
