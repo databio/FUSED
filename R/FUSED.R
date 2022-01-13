@@ -41,8 +41,8 @@ NULL
 #'                     name list elements. Can be a character vector
 #'                     or an integer.
 #' @return A list of data.tables.
-splitDataTable <- function(dt, split_factor) {
-    stopifnot(any(class(dt) == c("data.table")))
+splitDataTable <- function(DT, split_factor) {
+    stopifnot(any(class(DT) == c("data.table")))
     if (split_factor %in% colnames(DT)) {
         factor_order = unique(DT[, get(split_factor)])
         if (is.numeric(split_factor)) {
