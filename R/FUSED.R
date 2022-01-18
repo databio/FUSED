@@ -15,6 +15,29 @@ NULL
 ################################################################################
 # FUNCTIONS
 
+#' A standardized ggplot theme for FUSED plots
+#'
+#' @keywords ggplot2 theme
+#' @examples
+#' theme_FUSED()
+theme_FUSED <- function(base_family = "sans", ...){
+    theme_classic(base_family = base_family, base_size = 14, ...) +
+        theme(
+            axis.line = element_line(size = 0.5),
+            axis.text.x = element_text(angle = 0, hjust = 0.5, vjust=0.5),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = "transparent"),
+            plot.background = element_rect(fill = "transparent", color = NA),
+            legend.background = element_rect(fill = "transparent", color = NA),
+            legend.box.background = element_rect(fill = "transparent", color = NA),
+            aspect.ratio = 1,
+            legend.position = "none",
+            plot.title = element_text(hjust = 0.5),
+            panel.border = element_rect(colour = "black", fill=NA, size=0.5)
+        )
+}
+
 #' Checks if provided genome is an available BSgenome object,
 #' and if so, returns it. If the library is not installed, it issues a warning
 #' and returns NULL.
@@ -563,5 +586,18 @@ calcHomology <- function(DT,
             return(NULL)
         }
     }
+}
+
+#' Plot the fusions that pass by mechanism.
+#'
+#' @param DT A data.table object representing a single fusion.
+#' @return A ggplot object.
+plotHomology <- function(DT) {
+    return(ggplot(DT[criteria=="pass",], aes(x=type,
+                                             group=criteria,
+                                             fill=criteria)) +
+            geom_bar() +
+            labs(x="Repair Type", y="Number of Passing Fusion Events") +
+            theme_FUSED())
 }
 

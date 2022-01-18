@@ -6,14 +6,14 @@
 individual column. Returns a list of data.tables if column to split
 is present, otherwise returns NULL.}
 \usage{
-splitDataTable(dt, split_factor)
+splitDataTable(DT, split_factor)
 }
 \arguments{
+\item{DT}{A data.table object.}
+
 \item{split_factor}{A column name in DT to use as a factor to split and
 name list elements. Can be a character vector
 or an integer.}
-
-\item{DT}{A data.table object.}
 }
 \value{
 A list of data.tables.
