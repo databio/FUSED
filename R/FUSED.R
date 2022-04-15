@@ -332,7 +332,7 @@ calcPairwiseAlignment <- function(DT,
                                   ...) {
     # NHEJ: +/- 4 nt (can only be in 4 nt window around or either side of break)
     # SSA: +/- 70 nt
-    # MMEJ: +/- 20 nt (+/- 50 albreakpointsable)
+    # MMEJ: +/- 20 nt (+/- 50 allowable)
     # BIR: +/- 100 nt
     # requires UCSC compatible chr name
     geneA <- data.table(gene_name = DT$lGene,
@@ -358,6 +358,7 @@ calcPairwiseAlignment <- function(DT,
                                                type = "local",
                                                gapOpening=gapOpening,
                                                gapExtension=gapExtension)
+
     hDT <- data.table(type = mechanism,
                       uniqueID = DT$uniqueID,
                       fusionName = DT$fusion_name,
@@ -382,6 +383,269 @@ calcPairwiseAlignment <- function(DT,
     return(hDT)
 }
 
+#' Helper function to calculate NHEJ homologies
+#'
+#' Returns a data.table for the fusion with the best scoring alignment
+#' (or no alignment) for the NHEJ pathway.
+#'
+#' @param DT A data.table object containing fusion predictions.
+#' @param bsg A BSgenome string or BSgenome object.
+#' @param window A numeric value representing how upstream and downstream of
+#'               a fusion breakpoint within which to perform sequence alignment.
+#' @param gapOpening A numeric value representing the cost for opening a gap
+#'                   in the alignment.
+#' @param gapExtension A numeric value representing the incremental cost for
+#'                     extending the gap in alignment.
+#' @return A data.table object with putative homologies.
+calcNHEJ <- function(DT,
+                     bsg,
+                     window = 4,
+                     gapOpening = Inf,
+                     gapExtension = 4,
+                     ...) {
+    options(warn=0)
+    # Default window is (+/-) 4 nt upstream and downstream of breakpoint
+    if (is.na(window)) {
+        window <- 4
+    }
+    if (is.na(gapOpening)) {
+        gapOpening <- Inf
+    }
+    if (is.na(gapExtension)) {
+        gapExtension <- 4
+    }
+    homo <- calcPairwiseAlignment(DT,
+                                  bsg=bsg,
+                                  mechanism = "NHEJ",
+                                  window = window,
+                                  gapOpening = gapOpening,
+                                  gapExtension = gapExtension,
+                                  ...)
+    # Score must be positive, and the template must include
+    # the breakpoint
+    if (homo$hScore > 0 & (homo$hLength <= 4 &
+                           (homo$pEnd == 4 | homo$sStart == 1))) {
+        homo[, criteria := "pass"]
+    } else {
+        homo[, criteria := "fail"]
+    }
+    homo[] # Ensure returned data.table prints on first return
+    summary(warnings())
+    options(warn=1)
+    return(homo)
+}
+
+#' Helper function to calculate SSA homologies
+#'
+#' Returns a data.table for the fusion with the best scoring alignment
+#' (or no alignment) for the SSA pathway.
+#'
+#' @param DT A data.table object containing fusion predictions.
+#' @param bsg A BSgenome string or BSgenome object.
+#' @param window A numeric value representing how upstream and downstream of
+#'               a fusion breakpoint within which to perform sequence alignment.
+#' @param gapOpening A numeric value representing the cost for opening a gap
+#'                   in the alignment.
+#' @param gapExtension A numeric value representing the incremental cost for
+#'                     extending the gap in alignment.
+#' @return A data.table object with putative homologies.
+calcSSA <- function(DT,
+                    bsg,
+                    window = 70,
+                    gapOpening = Inf,
+                    gapExtension = 4,
+                    ...) {
+    options(warn=0)
+    # Default window is (+/-) 70 nt upstream and downstream
+    # of breakpoint
+    if (is.na(window)) {
+        window <- 50
+    }
+    if (is.na(gapOpening)) {
+        gapOpening <- Inf
+    }
+    if (is.na(gapExtension)) {
+        gapExtension <- 4
+    }
+    homo <- calcPairwiseAlignment(DT,
+                                  bsg=bsg,
+                                  mechanism = "SSA",
+                                  window = window,
+                                  gapOpening = gapOpening,
+                                  gapExtension = gapExtension,
+                                  ...)
+    # Score must be positive, and the template must be between
+    # 30 and 70 nt in length.
+    if (homo$hScore > 0 & (homo$hLength >= 30 & homo$hLength <= 70)) {
+        homo[, criteria := "pass"]
+    } else {
+        homo[, criteria := "fail"]
+    }
+    homo[] # Ensure returned data.table prints on first return
+    summary(warnings())
+    options(warn=1)
+    return(homo)
+}
+
+#' Helper function to calculate MMEJ homologies
+#'
+#' Returns a data.table for the fusion with the best scoring alignment
+#' (or no alignment) for the MMEJ pathway.
+#'
+#' @param DT A data.table object containing fusion predictions.
+#' @param bsg A BSgenome string or BSgenome object.
+#' @param window A numeric value representing how upstream and downstream of
+#'               a fusion breakpoint within which to perform sequence alignment.
+#' @param gapOpening A numeric value representing the cost for opening a gap
+#'                   in the alignment.
+#' @param gapExtension A numeric value representing the incremental cost for
+#'                     extending the gap in alignment.
+#' @return A data.table object with putative homologies.
+calcMMEJ <- function(DT,
+                     bsg,
+                     window = 20,
+                     gapOpening = Inf,
+                     gapExtension = 4,
+                     ...) {
+    options(warn=0)
+    # Default window is (+/-) 20 nt upstream and downstream
+    # of breakpoint
+    if (is.na(window)) {
+        window <- 20
+    }
+    if (is.na(gapOpening)) {
+        gapOpening <- Inf
+    }
+    if (is.na(gapExtension)) {
+        gapExtension <- 4
+    }
+    homo <- calcPairwiseAlignment(DT,
+                                  bsg=bsg,
+                                  mechanism = "MMEJ",
+                                  window = window,
+                                  gapOpening = gapOpening,
+                                  gapExtension = gapExtension,
+                                  ...)
+    # Score must be positive, and the template must be less than 20 nt
+    if (homo$hScore > 0 & homo$hLength <= 20) {
+        homo[, criteria := "pass"]
+    } else {
+        homo[, criteria := "fail"]
+    }
+    homo[] # Ensure returned data.table prints on first return
+    summary(warnings())
+    options(warn=1)
+    return(homo)
+}
+
+#' Helper function to calculate BIR homologies
+#'
+#' Returns a data.table for the fusion with the best scoring alignment
+#' (or no alignment) for the BIR pathway.
+#'
+#' @param DT A data.table object containing fusion predictions.
+#' @param bsg A BSgenome string or BSgenome object.
+#' @param window A numeric value representing how upstream and downstream of
+#'               a fusion breakpoint within which to perform sequence alignment.
+#' @param gapOpening A numeric value representing the cost for opening a gap
+#'                   in the alignment.
+#' @param gapExtension A numeric value representing the incremental cost for
+#'                     extending the gap in alignment.
+#' @return A data.table object with putative homologies.
+calcBIR <- function(DT,
+                     bsg,
+                     window = 100,
+                     gapOpening = Inf,
+                     gapExtension = 4,
+                     ...) {
+    options(warn=0)
+    # Default window is (+/-) 100 nt upstream and downstream
+    # of breakpoint
+    if (is.na(window)) {
+        window <- 100
+    }
+    if (is.na(gapOpening)) {
+        gapOpening <- Inf
+    }
+    if (is.na(gapExtension)) {
+        gapExtension <- 4
+    }
+    homo <- calcPairwiseAlignment(DT,
+                                  bsg=bsg,
+                                  mechanism = "BIR",
+                                  window = window,
+                                  gapOpening = gapOpening,
+                                  gapExtension = gapExtension,
+                                  ...)
+    # Score must be positive, and the template must be between
+    # 70 and 100 nt in length.
+    if (homo$hScore > 0 & (homo$hLength >= 70 & homo$hLength <= 100)) {
+        homo[, criteria := "pass"]
+    } else {
+        homo[, criteria := "fail"]
+    }
+    homo[] # Ensure returned data.table prints on first return
+    summary(warnings())
+    options(warn=1)
+    return(homo)
+}
+
+#' Helper function to calculate MMBIR homologies
+#'
+#' Returns a data.table for the fusion with the best scoring alignment
+#' (or no alignment) for the MMBIR pathway.
+#'
+#' @param DT A data.table object containing fusion predictions.
+#' @param bsg A BSgenome string or BSgenome object.
+#' @param window A numeric value representing how upstream and downstream of
+#'               a fusion breakpoint within which to perform sequence alignment.
+#' @param gapOpening A numeric value representing the cost for opening a gap
+#'                   in the alignment.
+#' @param gapExtension A numeric value representing the incremental cost for
+#'                     extending the gap in alignment.
+#' @return A data.table object with putative homologies.
+calcMMBIR <- function(DT,
+                      bsg,
+                      window = 20,
+                      gapOpening = 0,
+                      gapExtension = 0,
+                      ...) {
+    options(warn=0)
+    # Default window is (+/-) 20 nt upstream and downstream
+    # of breakpoint
+    if (is.na(window)) {
+        window <- 20
+    }
+    if (is.na(gapOpening)) {
+        gapOpening <- 0
+    }
+    if (is.na(gapExtension)) {
+        gapExtension <- 0
+    }
+    # MMBIR allows for gaps. Default is no cost for opening or
+    # extending gap.
+    homo <- calcPairwiseAlignment(DT,
+                                  bsg=bsg,
+                                  mechanism = "MMBIR",
+                                  window = window,
+                                  gapOpening = gapOpening,
+                                  gapExtension = gapExtension,
+                                  ...)
+    # Score must be positive, and the template must include
+    # the breakpoint and be less than 20 nt in length.
+    if (homo$hScore > 0 & homo$hLength <= 20 & homo$gapCount > 0 &
+        (homo$gapCount <= (0.2*homo$hLength)) &
+        (homo$pEnd == 10 | homo$sStart == 1)) {
+        homo[, criteria := "pass"]
+    } else {
+        homo[, criteria := "fail"]
+    }
+    homo[] # Ensure returned data.table prints on first return
+    summary(warnings())
+    options(warn=1)
+    return(homo)
+}
+
 #' Checks a fusion for hallmarks of microhomology error prone repairs.
 #' Returns a data.table for the fusion with the best scoring alignment
 #' (or no alignment) for each repair pathway.
@@ -400,7 +664,7 @@ calcPairwiseAlignment <- function(DT,
 #' @return A data.table object with fusion alignments for specified mechanism.
 calcHomology <- function(DT,
                          bsg,
-                         mechanism = c("NHEJ", "SSA", "MMEJ", "BIR", "MMBIR"),
+                         mechanism = c("ALL", "NHEJ", "SSA", "MMEJ", "BIR", "MMBIR"),
                          window = NA,
                          gapOpening = NA,
                          gapExtension = NA,
@@ -426,161 +690,65 @@ calcHomology <- function(DT,
         } else {
             stop("Could not identify source of fusion predictions.")
         }
-        if (toupper(mechanism) == "NHEJ") {
-            # Default window is (+/-) 4 nt upstream and downstream of breakpoint
-            if (is.na(window)) {
-                window <- 4
-            }
-            if (is.na(gapOpening)) {
-                gapOpening <- Inf
-            }
-            if (is.na(gapExtension)) {
-                gapExtension <- 4
-            }
-            homo <- calcPairwiseAlignment(DT,
-                                          bsg=bsg,
-                                          mechanism = "NHEJ",
-                                          window = window,
-                                          gapOpening = gapOpening,
-                                          gapExtension = gapExtension,
-                                          ...)
-            # Score must be positive, and the template must include
-            # the breakpoint
-            if (homo$hScore > 0 & (homo$hLength <= 4 &
-                                   (homo$pEnd == 4 | homo$sStart == 1))) {
-                homo[, criteria := "pass"]
-            } else {
-                homo[, criteria := "fail"]
-            }
-            homo[] # Ensure returned data.table prints on first return
-            summary(warnings())
-            options(warn=1)
-            return(homo)
+        if (toupper(mechanism) == "ALL") {
+            nhej  <- calcNHEJ(DT,
+                              bsg=bsg,
+                              window = window,
+                              gapOpening = gapOpening,
+                              gapExtension = gapExtension)
+            ssa   <- calcSSA(DT,
+                             bsg=bsg,
+                             window = window,
+                             gapOpening = gapOpening,
+                             gapExtension = gapExtension)
+            mmej  <- calcMMEJ(DT,
+                              bsg=bsg,
+                              window = window,
+                              gapOpening = gapOpening,
+                              gapExtension = gapExtension)
+            bir   <- calcBIR(DT,
+                             bsg=bsg,
+                             window = window,
+                             gapOpening = gapOpening,
+                             gapExtension = gapExtension)
+            mmbir <- calcMMBIR(DT,
+                               bsg=bsg,
+                               window = window,
+                               gapOpening = gapOpening,
+                               gapExtension = gapExtension)
+            rbindlist(list(nhej, ssa, mmej, bir, mmbir))
+        } else if (toupper(mechanism) == "NHEJ") {
+            calcNHEJ(DT,
+                     bsg=bsg,
+                     window = window,
+                     gapOpening = gapOpening,
+                     gapExtension = gapExtension)
         } else if (toupper(mechanism) == "SSA") {
-            # Default window is (+/-) 70 nt upstream and downstream
-            # of breakpoint
-            if (is.na(window)) {
-                window <- 70
-            }
-            if (is.na(gapOpening)) {
-                gapOpening <- Inf
-            }
-            if (is.na(gapExtension)) {
-                gapExtension <- 4
-            }
-            homo <- calcPairwiseAlignment(DT,
-                                          bsg=bsg,
-                                          mechanism = "SSA",
-                                          window = window,
-                                          gapOpening = gapOpening,
-                                          gapExtension = gapExtension,
-                                          ...)
-            # Score must be positive, and the template must be between
-            # 30 and 70 nt in length.
-            if (homo$hScore > 0 & (homo$hLength >= 30 & homo$hLength <= 70)) {
-                homo[, criteria := "pass"]
-            } else {
-                homo[, criteria := "fail"]
-            }
-            homo[] # Ensure returned data.table prints on first return
-            summary(warnings())
-            options(warn=1)
-            return(homo)
+            calcSSA(DT,
+                    bsg=bsg,
+                    window = window,
+                    gapOpening = gapOpening,
+                    gapExtension = gapExtension)
         } else if (toupper(mechanism) == "MMEJ") {
-            # Default window is (+/-) 20 nt upstream and downstream
-            # of breakpoint
-            if (is.na(window)) {
-                window <- 20
-            }
-            if (is.na(gapOpening)) {
-                gapOpening <- Inf
-            }
-            if (is.na(gapExtension)) {
-                gapExtension <- 4
-            }
-            homo <- calcPairwiseAlignment(DT,
-                                          bsg=bsg,
-                                          mechanism = "MMEJ",
-                                          window = window,
-                                          gapOpening = gapOpening,
-                                          gapExtension = gapExtension,
-                                          ...)
-            # Score must be positive, and the template must be less than 20 nt
-            if (homo$hScore > 0 & homo$hLength <= 20) {
-                homo[, criteria := "pass"]
-            } else {
-                homo[, criteria := "fail"]
-            }
-            homo[] # Ensure returned data.table prints on first return
-            summary(warnings())
-            options(warn=1)
-            return(homo)
+            calcMMEJ(DT,
+                     bsg=bsg,
+                     window = window,
+                     gapOpening = gapOpening,
+                     gapExtension = gapExtension)
         } else if (toupper(mechanism) == "BIR") {
-            # Default window is (+/-) 100 nt upstream and downstream
-            # of breakpoint
-            if (is.na(window)) {
-                window <- 100
-            }
-            if (is.na(gapOpening)) {
-                gapOpening <- Inf
-            }
-            if (is.na(gapExtension)) {
-                gapExtension <- 4
-            }
-            homo <- calcPairwiseAlignment(DT,
-                                          bsg=bsg,
-                                          mechanism = "BIR",
-                                          window = window,
-                                          gapOpening = gapOpening,
-                                          gapExtension = gapExtension,
-                                          ...)
-            # Score must be positive, and the template must be between
-            # 70 and 100 nt in length.
-            if (homo$hScore > 0 & (homo$hLength >= 70 & homo$hLength <= 100)) {
-                homo[, criteria := "pass"]
-            } else {
-                homo[, criteria := "fail"]
-            }
-            homo[] # Ensure returned data.table prints on first return
-            summary(warnings())
-            options(warn=1)
-            return(homo)
+            calcBIR(DT,
+                    bsg=bsg,
+                    window = window,
+                    gapOpening = gapOpening,
+                    gapExtension = gapExtension)
         } else if (toupper(mechanism) == "MMBIR") {
-            # Default window is (+/-) 20 nt upstream and downstream
-            # of breakpoint
-            if (is.na(window)) {
-                window <- 20
-            }
-            if (is.na(gapOpening)) {
-                gapOpening <- 0
-            }
-            if (is.na(gapExtension)) {
-                gapExtension <- 0
-            }
-            # MMBIR allows for gaps. Default is no cost for opening or
-            # extending gap.
-            homo <- calcPairwiseAlignment(DT,
-                                          bsg=bsg,
-                                          mechanism = "MMBIR",
-                                          window = window,
-                                          gapOpening = gapOpening,
-                                          gapExtension = gapExtension,
-                                          ...)
-            # Score must be positive, and the template must include
-            # the breakpoint and be less than 20 nt in length.
-            if (homo$hScore > 0 & homo$hLength <= 20 & homo$gapCount > 0 &
-                (homo$gapCount <= (0.2*homo$hLength)) &
-                (homo$pEnd == 10 | homo$sStart == 1)) {
-                homo[, criteria := "pass"]
-            } else {
-                homo[, criteria := "fail"]
-            }
-            homo[] # Ensure returned data.table prints on first return
-            summary(warnings())
-            options(warn=1)
-            return(homo)
+            calcMMBIR(DT,
+                      bsg=bsg,
+                      window = window,
+                      gapOpening = gapOpening,
+                      gapExtension = gapExtension)
         } else {
-            warning(mechanism, "is not recognized as a valid mechanism.")
+            warning(mechanism, " is not recognized as a valid mechanism.")
             summary(warnings())
             options(warn=1)
             return(NULL)
@@ -592,12 +760,22 @@ calcHomology <- function(DT,
 #'
 #' @param DT A data.table object representing a single fusion.
 #' @return A ggplot object.
-plotHomology <- function(DT) {
-    return(ggplot(DT[criteria=="pass",], aes(x=type,
-                                             group=criteria,
-                                             fill=criteria)) +
-            geom_bar() +
-            labs(x="Repair Type", y="Number of Passing Fusion Events") +
-            theme_FUSED())
+plotHomology <- function(DT, type=c("N", "Frequency")) {
+    if (toupper(type) == "N") {
+        return(ggplot(DT[criteria=="pass",], aes(x=type,
+                                                 group=criteria,
+                                                 fill=type)) +
+                   geom_bar() +
+                   labs(x="Repair Type", y="Number of Passing Fusion Events") +
+                   theme_FUSED())
+    } else {
+        tbl <- as.data.table(table(DT$criteria, DT$type))
+        return(ggplot(tbl, aes(fill=V2, y=N, x=V1)) +
+                geom_bar(position="fill", stat="identity") +
+                labs(y="Frequency", x="Fusion Events", fill = "Mechanism") +
+                coord_flip() +
+                FUSED:::theme_FUSED() +
+                theme(legend.position = "bottom"))
+    }
 }
 
