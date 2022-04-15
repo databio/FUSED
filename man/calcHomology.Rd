@@ -9,7 +9,7 @@ Returns a data.table for the fusion with the best scoring alignment
 calcHomology(
   DT,
   bsg,
-  mechanism = c("NHEJ", "SSA", "MMEJ", "BIR", "MMBIR"),
+  mechanism = c("ALL", "NHEJ", "SSA", "MMEJ", "BIR", "MMBIR"),
   window = NA,
   gapOpening = NA,
   gapExtension = NA,

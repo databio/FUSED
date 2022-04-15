@@ -4,7 +4,7 @@
 \alias{plotHomology}
 \title{Plot the fusions that pass by mechanism.}
 \usage{
-plotHomology(DT)
+plotHomology(DT, type = c("N", "Frequency"))
 }
 \arguments{
 \item{DT}{A data.table object representing a single fusion.}
