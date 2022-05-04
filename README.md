@@ -1,10 +1,8 @@
 # FUSED
 FUSion Error prone repair Detection
 
-<img src="Microhomology_Error_Prone_Repair_Spectrum.svg" alt="error prone repair cartoon" height="400" align="center"/>  
+<img src="Microhomology_Error_Prone_Repair_Spectrum.svg" alt="error prone repair cartoon" height="600" align="center"/>  
 
-<br></br>
-<br></br>
 <br></br>
 <br></br>  
 
