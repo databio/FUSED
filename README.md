@@ -1,13 +1,14 @@
-# FUSED
-FUSion Error prone repair Detection
+<img src="FUSED_logo.svg" alt="FUSED logo" height="200" align="left"/>  
 
-<img src="Microhomology_Error_Prone_Repair_Spectrum.svg" alt="error prone repair cartoon" height="500" align="center"/>  
+<br></br>
 
-<br></br>  
+**FUS**ion **E**rror-prone repair **D**etection
 
 ## Description
 
 FUSED is a collection of functions to determine the presence of hallmarks of common DNA repair mechanisms including NHEJ, MMEJ, SSA, BIR, and MMBIR. 
+
+<img src="Microhomology_Error_Prone_Repair_Spectrum.svg" alt="error prone repair cartoon" height="450" align="center"/> 
 
 ### NHEJ
 
