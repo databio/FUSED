@@ -1,6 +1,8 @@
 <img src="FUSED_logo.svg" alt="FUSED logo" height="200" align="left"/>  
 
 <br></br>
+<br></br>
+<br></br>
 
 **FUS**ion **E**rror-prone repair **D**etection
 
